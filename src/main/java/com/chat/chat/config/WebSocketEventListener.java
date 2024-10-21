@@ -14,20 +14,30 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 @RequiredArgsConstructor
 @Slf4j
 public class WebSocketEventListener {
-    private  final SimpMessageSendingOperations messageTemplate;
+
+    // Template pour envoyer des messages via WebSocket
+    private final SimpMessageSendingOperations messageTemplate;
+
+    // Listener pour les événements de déconnexion de session WebSocket
     @EventListener
-    public  void handleWebSocketDisconnectListener(SessionDisconnectEvent event){
+    public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
+        // Accesseur pour les en-têtes STOMP
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
 
+        // Récupère le nom d'utilisateur à partir des attributs de session
         String username = (String) headerAccessor.getSessionAttributes().get("username");
 
-        if (username != null){
+        if (username != null) {
+            // Log une information de déconnexion d'utilisateur
             log.info("User disconnected: {}", username);
+
+            // Crée un message de type LEAVE pour notifier les autres utilisateurs
             var chatMessage = ChatMessage.builder()
                     .type(MessageType.LEAVE)
                     .sender(username)
                     .build();
 
+            // Envoie le message de déconnexion à tous les abonnés du sujet public
             messageTemplate.convertAndSend("/topic/public", chatMessage);
         }
     }
